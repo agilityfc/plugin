@@ -1,16 +1,15 @@
 package org.agilityfc;
 
 import com.google.inject.Provides;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
+
+import javax.inject.Inject;
 
 @Slf4j
 @PluginDescriptor(
@@ -19,35 +18,35 @@ import net.runelite.client.plugins.PluginDescriptor;
 public class AgilityFcPlugin extends Plugin
 {
     @Inject
-    private Client client;
+    private ClientToolbar clientToolbar;
 
     @Inject
     private AgilityFcConfig config;
 
-    @Override
-    protected void startUp() throws Exception
-    {
-        log.info("Agility FC started!");
-    }
-
-    @Override
-    protected void shutDown() throws Exception
-    {
-        log.info("Agility FC stopped!");
-    }
-
-    @Subscribe
-    public void onGameStateChanged(GameStateChanged gameStateChanged)
-    {
-        if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
-        {
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Agility FC says " + config.greeting(), null);
-        }
-    }
+    private NavigationButton navButton;
 
     @Provides
     AgilityFcConfig provideConfig(ConfigManager configManager)
     {
         return configManager.getConfig(AgilityFcConfig.class);
+    }
+
+    @Override
+    protected void startUp() throws Exception
+    {
+        navButton = NavigationButton.builder()
+            .tooltip("Agility FC")
+            .icon(ImageUtil.loadImageResource(getClass(), "icon.png"))
+            .priority(10)
+            .panel(injector.getInstance(AgilityFcPanel.class))
+            .build();
+
+        clientToolbar.addNavigation(navButton);
+    }
+
+    @Override
+    protected void shutDown() throws Exception
+    {
+        clientToolbar.removeNavigation(navButton);
     }
 }
