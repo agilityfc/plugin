@@ -1,4 +1,4 @@
-package org.agilityfc;
+package org.agilityfc.util;
 
 import lombok.SneakyThrows;
 import net.runelite.api.Client;
