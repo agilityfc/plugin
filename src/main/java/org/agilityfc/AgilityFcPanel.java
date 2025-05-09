@@ -21,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
@@ -31,6 +32,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -118,6 +121,12 @@ public class AgilityFcPanel extends PluginPanel
         g.dispose();
 
         return r;
+    }
+
+    private static void copyString(String s)
+    {
+        Toolkit.getDefaultToolkit().getSystemClipboard()
+            .setContents(new StringSelection(s), null);
     }
 
     private static String screenshotName(DonationInfo di)
@@ -270,7 +279,8 @@ public class AgilityFcPanel extends PluginPanel
     }
 
     @Inject
-    public AgilityFcPanel(NameAutocompleter nameAutocompleter)
+    public AgilityFcPanel(
+        NameAutocompleter nameAutocompleter, AgilityFcConfig config)
     {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -343,6 +353,14 @@ public class AgilityFcPanel extends PluginPanel
         sendButton.setPreferredSize(STANDARD_DIM);
         sendButton.setEnabled(false);
 
+        JButton copyRemoteButton = new JButton("Copy remote");
+        copyRemoteButton.addActionListener(e -> copyString(config.remote()));
+        copyRemoteButton.setPreferredSize(STANDARD_DIM);
+
+        JButton copyKeyButton = new JButton("Copy key");
+        copyKeyButton.addActionListener(e -> copyString(config.key()));
+        copyKeyButton.setPreferredSize(STANDARD_DIM);
+
         GridBagConstraintsBuilder b = new GridBagConstraintsBuilder()
             .x(0)
             .insets(3, 0, 3, 0)
@@ -354,6 +372,9 @@ public class AgilityFcPanel extends PluginPanel
         add(labeledComponent("Screenshot", screenshotLabel), b.y(3).build());
         add(scrapeButton, b.y(4).build());
         add(sendButton, b.y(5).build());
+        add(new JSeparator(), b.y(6).build());
+        add(copyRemoteButton, b.y(7).build());
+        add(copyKeyButton, b.y(8).build());
 
         clearDonation();
     }
