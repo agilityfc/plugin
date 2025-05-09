@@ -9,11 +9,10 @@ import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.Text;
+import okhttp3.Call;
 import okhttp3.Response;
 import org.agilityfc.util.GridBagConstraintsBuilder;
 import org.agilityfc.util.NameAutocompleter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.inject.Inject;
 import javax.swing.BorderFactory;
@@ -67,7 +66,7 @@ public class AgilityFcPanel extends PluginPanel
     private AgilityFcPlugin plugin;
 
     private DonationInfo scrapedDono;
-    private Pair<DonationInfo, SwingWorker<Void, Void>> sendJob;
+    private SendWorker sendWorker;
     private final IconTextField fromField;
     private final JTextField toField;
     private final JTextField amountField;
@@ -174,59 +173,78 @@ public class AgilityFcPanel extends PluginPanel
         sendButton.setEnabled(true);
     }
 
-    private SwingWorker<Void, Void> sendWorker(DonationInfo di)
+    class SendWorker extends SwingWorker<Void, Void>
     {
-        return new SwingWorker<>()
+        private final DonationInfo di;
+        private final CompletableFuture<Call> future;
+
+        public SendWorker(DonationInfo di)
         {
-            @Override
-            protected Void doInBackground() throws Exception
+            this.di = di;
+            this.future = new CompletableFuture<>();
+        }
+
+        public DonationInfo getDonationInfo()
+        {
+            return di;
+        }
+
+        public void cancel()
+        {
+            cancel(true);
+            future.thenAccept(Call::cancel);
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception
+        {
+            Call call = plugin.makeCall(di);
+            future.complete(call);
+
+            try (Response r = call.execute())
             {
-                try (Response r = plugin.send(di))
+                if (r.code() != 200)
                 {
-                    if (r.code() != 200)
-                    {
-                        throw new RuntimeException(
-                            String.format("Unexpected response code: %s",
-                                r.code()));
-                    }
-                }
-
-                return null;
-            }
-
-            private void saveScreenshot(DonationInfo di, boolean success)
-            {
-                CompletableFuture.runAsync(() -> {
-                    String name = screenshotName(di);
-                    imageCapture.saveScreenshot(
-                        di.getScreenshot(), success ? name : name + " (Failed)",
-                        SCREENSHOT_DIR, true, true);
-                });
-            }
-
-            @Override
-            protected void done()
-            {
-                fromField.setEditable(true);
-                scrapeButton.setEnabled(true);
-
-                try
-                {
-                    get();
-                    fromField.setIcon(IconTextField.Icon.SEARCH);
-                    clearDonation();
-                    saveScreenshot(di, true);
-                }
-                catch (InterruptedException | ExecutionException |
-                       CancellationException e)
-                {
-                    log.error("Send failed", e);
-                    fromField.setIcon(IconTextField.Icon.ERROR);
-                    sendButton.setEnabled(true);
-                    saveScreenshot(di, false);
+                    throw new RuntimeException(
+                        String.format("Unexpected response code: %s", r.code()));
                 }
             }
-        };
+
+            return null;
+        }
+
+        private void saveScreenshot(DonationInfo di, boolean success)
+        {
+            CompletableFuture.runAsync(() -> {
+                String name = screenshotName(di);
+                imageCapture.saveScreenshot(
+                    di.getScreenshot(), success ? name : name + " (Failed)",
+                    SCREENSHOT_DIR, true, true);
+            });
+        }
+
+        @Override
+        protected void done()
+        {
+            fromField.setEditable(true);
+            scrapeButton.setEnabled(true);
+
+            try
+            {
+                get();
+                fromField.setIcon(IconTextField.Icon.SEARCH);
+                clearDonation();
+                saveScreenshot(di, true);
+            }
+            catch (InterruptedException | ExecutionException |
+                   CancellationException e)
+            {
+                log.error("Send failed", e);
+                fromField.setIcon(IconTextField.Icon.ERROR);
+                sendButton.setEnabled(true);
+                saveScreenshot(di, false);
+            }
+        }
     }
 
     private void sendDonation()
@@ -242,8 +260,8 @@ public class AgilityFcPanel extends PluginPanel
             sendButton.setEnabled(false);
 
             DonationInfo di = scrapedDono.withFrom(from);
-            sendJob = new ImmutablePair<>(di, sendWorker(di));
-            sendJob.getRight().execute();
+            sendWorker = new SendWorker(di);
+            sendWorker.execute();
         }
         else
         {
@@ -280,28 +298,26 @@ public class AgilityFcPanel extends PluginPanel
         });
         fromField.addClearListener(() ->
         {
-            if (sendJob == null)
+            if (sendWorker == null)
             {
                 fromField.setIcon(IconTextField.Icon.SEARCH);
             }
             else
             {
-                var di = sendJob.getLeft();
-                var worker = sendJob.getRight();
+                sendWorker.cancel();
 
-                sendJob = null;
-                worker.cancel(true);
-
-                if (worker.isCancelled())
+                if (sendWorker.isCancelled())
                 {
                     // NOTE: Set back the cleared text and leave it up to the
                     // worker's `done()` method to do the rest.
-                    fromField.setText(di.getFrom());
+                    fromField.setText(sendWorker.getDonationInfo().getFrom());
                 }
                 else
                 {
                     fromField.setIcon(IconTextField.Icon.SEARCH);
                 }
+
+                sendWorker = null;
             }
         });
 

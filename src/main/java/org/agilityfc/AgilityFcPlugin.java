@@ -12,10 +12,10 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.Call;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 import org.agilityfc.util.CompositeX509TrustManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -151,7 +151,7 @@ public class AgilityFcPlugin extends Plugin
         }
     }
 
-    public Response send(DonationInfo di) throws IOException
+    public Call makeCall(DonationInfo di)
     {
         if (httpClient == null)
         {
@@ -162,7 +162,7 @@ public class AgilityFcPlugin extends Plugin
             .url(remote.getUrl())
             .build();
 
-        return httpClient.newCall(request).execute();
+        return httpClient.newCall(request);
     }
 
     @Override
