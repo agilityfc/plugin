@@ -47,6 +47,9 @@ public class AgilityFcPlugin extends Plugin
     private ClientToolbar clientToolbar;
 
     @Inject
+    private Gson gson;
+
+    @Inject
     private AgilityFcConfig config;
 
     private DonationRemote remote;
@@ -82,11 +85,11 @@ public class AgilityFcPlugin extends Plugin
         return new ImmutablePair<>(sc, tm);
     }
 
-    private static DonationRemote parseRemote(String remote)
+    private DonationRemote parseRemote(String remote)
     {
         byte[] b = Base64.getDecoder().decode(remote);
         String s = new String(b, Charsets.UTF_8);
-        DonationRemote r = new Gson().fromJson(s, DonationRemote.class);
+        DonationRemote r = gson.fromJson(s, DonationRemote.class);
 
         if (r == null)
         {
