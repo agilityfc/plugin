@@ -50,10 +50,13 @@ public class AgilityFcPlugin extends Plugin
     private Gson gson;
 
     @Inject
+    private OkHttpClient httpClient;
+
+    @Inject
     private AgilityFcConfig config;
 
     private DonationRemote remote;
-    private OkHttpClient httpClient;
+    private OkHttpClient myHttpClient;
     private NavigationButton navButton;
 
     private static KeyStore keyStoreForCertificate(String cert)
@@ -103,11 +106,11 @@ public class AgilityFcPlugin extends Plugin
         return r;
     }
 
-    private static OkHttpClient makeClient(String key, String cert)
+    private OkHttpClient makeClient(String key, String cert)
         throws CertificateException, KeyStoreException, IOException,
             NoSuchAlgorithmException, KeyManagementException
     {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder()
+        OkHttpClient.Builder builder = httpClient.newBuilder()
             .callTimeout(Duration.ofSeconds(10));
 
         if (StringUtils.isNotEmpty(key))
@@ -144,19 +147,19 @@ public class AgilityFcPlugin extends Plugin
 
         try
         {
-            httpClient = makeClient(config.key(), remote.getCert());
+            myHttpClient = makeClient(config.key(), remote.getCert());
         }
         catch (Exception e)
         {
             log.error("Making HTTP client failed", e);
             remote = null;
-            httpClient = null;
+            myHttpClient = null;
         }
     }
 
     public Call makeCall(DonationInfo di)
     {
-        if (httpClient == null)
+        if (myHttpClient == null)
         {
             throw new RuntimeException("No remote configured");
         }
@@ -165,7 +168,7 @@ public class AgilityFcPlugin extends Plugin
             .url(remote.getUrl())
             .build();
 
-        return httpClient.newCall(request);
+        return myHttpClient.newCall(request);
     }
 
     @Override
