@@ -17,14 +17,14 @@ public interface AgilityFcConfig extends Config
     String donationSection = "Donation Service";
 
     @ConfigItem(
-        keyName = "remote",
-        name = "Remote",
-        description = "The remote to send donation data to",
+        keyName = "url",
+        name = "URL",
+        description = "The URL of the service to send donation data to",
         secret = true,
         section = donationSection,
         position = 0
     )
-    default String remote()
+    default String url()
     {
         return "";
     }
@@ -32,7 +32,7 @@ public interface AgilityFcConfig extends Config
     @ConfigItem(
         keyName = "key",
         name = "Key",
-        description = "The key to use to authenticate with the remote",
+        description = "The key to use to authenticate with the service",
         secret = true,
         section = donationSection,
         position = 1

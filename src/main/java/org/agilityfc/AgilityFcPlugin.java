@@ -1,6 +1,5 @@
 package org.agilityfc;
 
-import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
@@ -16,26 +15,10 @@ import okhttp3.Call;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import org.agilityfc.util.CompositeX509TrustManager;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.inject.Inject;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.time.Duration;
-import java.util.Base64;
 
 @Slf4j
 @PluginDescriptor(
@@ -47,68 +30,15 @@ public class AgilityFcPlugin extends Plugin
     private ClientToolbar clientToolbar;
 
     @Inject
-    private Gson gson;
-
-    @Inject
     private OkHttpClient httpClient;
 
     @Inject
     private AgilityFcConfig config;
 
-    private DonationRemote remote;
     private OkHttpClient myHttpClient;
     private NavigationButton navButton;
 
-    private static KeyStore keyStoreForCertificate(String cert)
-        throws CertificateException, KeyStoreException, IOException,
-            NoSuchAlgorithmException
-    {
-        byte[] b = cert.getBytes(StandardCharsets.UTF_8);
-        CertificateFactory fact = CertificateFactory.getInstance("X.509");
-        Certificate c = fact.generateCertificate(new ByteArrayInputStream(b));
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-
-        ks.load(null, null);
-        ks.setCertificateEntry("cert", c);
-
-        return ks;
-    }
-
-    private static Pair<SSLContext, X509TrustManager>
-        sslContextForCertificate(String cert)
-        throws CertificateException, KeyStoreException, IOException,
-            NoSuchAlgorithmException, KeyManagementException
-    {
-        KeyStore ks = keyStoreForCertificate(cert);
-        X509TrustManager tm = CompositeX509TrustManager.getTrustManager(ks);
-        SSLContext sc = SSLContext.getInstance("TLS");
-
-        sc.init(null, new X509TrustManager[] {tm}, null);
-
-        return new ImmutablePair<>(sc, tm);
-    }
-
-    private DonationRemote parseRemote(String remote)
-    {
-        byte[] b = Base64.getDecoder().decode(remote);
-        String s = new String(b, Charsets.UTF_8);
-        DonationRemote r = gson.fromJson(s, DonationRemote.class);
-
-        if (r == null)
-        {
-            throw new RuntimeException("Empty remote string");
-        }
-        else if (!StringUtils.isNotEmpty(r.getUrl()))
-        {
-            throw new RuntimeException("Remote string missing URL");
-        }
-
-        return r;
-    }
-
-    private OkHttpClient makeClient(String key, String cert)
-        throws CertificateException, KeyStoreException, IOException,
-            NoSuchAlgorithmException, KeyManagementException
+    private OkHttpClient makeClient(String key)
     {
         OkHttpClient.Builder builder = httpClient.newBuilder()
             .callTimeout(Duration.ofSeconds(10));
@@ -121,51 +51,13 @@ public class AgilityFcPlugin extends Plugin
                     .build()));
         }
 
-        if (StringUtils.isNotEmpty(cert))
-        {
-            var p = sslContextForCertificate(cert);
-            builder
-                .sslSocketFactory(p.getLeft().getSocketFactory(), p.getRight())
-                .hostnameVerifier((s, sslSession) -> true);
-        }
-
         return builder.build();
-    }
-
-    private void cacheRemote()
-    {
-        try
-        {
-            remote = parseRemote(config.remote());
-        }
-        catch (Exception e)
-        {
-            log.error("Parsing remote config failed", e);
-            remote = null;
-            return;
-        }
-
-        try
-        {
-            myHttpClient = makeClient(config.key(), remote.getCert());
-        }
-        catch (Exception e)
-        {
-            log.error("Making HTTP client failed", e);
-            remote = null;
-            myHttpClient = null;
-        }
     }
 
     public Call makeCall(DonationInfo di)
     {
-        if (myHttpClient == null)
-        {
-            throw new RuntimeException("No remote configured");
-        }
-
         Request request = DonationRequest.builder(di)
-            .url(remote.getUrl())
+            .url(config.url())
             .build();
 
         return myHttpClient.newCall(request);
@@ -174,6 +66,7 @@ public class AgilityFcPlugin extends Plugin
     @Override
     protected void startUp() throws Exception
     {
+        myHttpClient = makeClient(config.key());
         navButton = NavigationButton.builder()
             .tooltip("Agility FC")
             .icon(ImageUtil.loadImageResource(getClass(), "icon.png"))
@@ -182,13 +75,12 @@ public class AgilityFcPlugin extends Plugin
             .build();
 
         clientToolbar.addNavigation(navButton);
-        cacheRemote();
     }
 
     @Subscribe
     private void onConfigChanged(ConfigChanged e)
     {
-        cacheRemote();
+        myHttpClient = makeClient(config.key());
     }
 
     @Override

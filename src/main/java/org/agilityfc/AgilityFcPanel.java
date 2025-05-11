@@ -353,10 +353,6 @@ public class AgilityFcPanel extends PluginPanel
         sendButton.setPreferredSize(STANDARD_DIM);
         sendButton.setEnabled(false);
 
-        JButton copyRemoteButton = new JButton("Copy remote");
-        copyRemoteButton.addActionListener(e -> copyString(config.remote()));
-        copyRemoteButton.setPreferredSize(STANDARD_DIM);
-
         JButton copyKeyButton = new JButton("Copy key");
         copyKeyButton.addActionListener(e -> copyString(config.key()));
         copyKeyButton.setPreferredSize(STANDARD_DIM);
@@ -373,8 +369,7 @@ public class AgilityFcPanel extends PluginPanel
         add(scrapeButton, b.y(4).build());
         add(sendButton, b.y(5).build());
         add(new JSeparator(), b.y(6).build());
-        add(copyRemoteButton, b.y(7).build());
-        add(copyKeyButton, b.y(8).build());
+        add(copyKeyButton, b.y(7).build());
 
         clearDonation();
     }
