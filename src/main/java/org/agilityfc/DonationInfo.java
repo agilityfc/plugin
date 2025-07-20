@@ -11,16 +11,16 @@ public class DonationInfo
 {
     /// Display name of the donor.
     @With
-    String from;
+    private String from;
 
     /// Display name of the receiver.
     @NonNull
-    String to;
+    private String to;
 
     /// A non-negative amount of GP.
-    int amount;
+    private int amount;
 
     /// Screenshot of the trade, loot key or price check screen.
     @NonNull
-    BufferedImage screenshot;
+    private BufferedImage screenshot;
 }
