@@ -13,4 +13,4 @@ The data consists of:
 - The name of the donor.
 - The name of the receiver.
 - The amount donated, in GP.
-- The screenshot of the trade, loot key or price check screen.
+- The screenshot of the trade, loot key, price check or looting bag screen.
