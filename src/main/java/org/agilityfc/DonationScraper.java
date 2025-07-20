@@ -155,13 +155,21 @@ public class DonationScraper
             InterfaceID.GePricechecker.OUTPUT, PRICE_CHECK_VALUE_PAT);
     }
 
+    public DonationInfo scrapeLootingBag()
+    {
+        return scrapeDonation(
+            InterfaceID.WildernessLootingbag.UNIVERSE,
+            InterfaceID.WildernessLootingbag.TOTAL, TRADE_VALUE_PAT);
+    }
+
     public DonationInfo scrapeDonation()
     {
         List<Supplier<DonationInfo>> scrapers = List.of(
             this::scrapeTradeMainScreen,
             this::scrapeTradeConfirmScreen,
             this::scrapeLootKeyScreen,
-            this::scrapePriceCheckScreen);
+            this::scrapePriceCheckScreen,
+            this::scrapeLootingBag);
 
         for (var s : scrapers)
         {
