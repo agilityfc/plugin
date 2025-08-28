@@ -215,7 +215,8 @@ public class AgilityFcPanel extends PluginPanel
                 if (r.code() != 200)
                 {
                     throw new RuntimeException(
-                        String.format("Unexpected response code: %s", r.code()));
+                        String.format("Unexpected response: %s, \"%s\"",
+                            r.code(), r.body().string()));
                 }
             }
 
