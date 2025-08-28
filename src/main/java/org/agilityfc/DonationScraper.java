@@ -25,8 +25,6 @@ public class DonationScraper
         Pattern.compile("(?i)trading with: ?(.+)");
     private static final Pattern TRADE_VALUE_PAT =
         Pattern.compile("(?i)value: (.+) coins");
-    private static final Pattern LOOT_KEY_VALUE_PAT =
-        Pattern.compile("(?i)value in chest: (.+)gp");
     private static final Pattern PRICE_CHECK_VALUE_PAT =
         Pattern.compile("(?i)total guide price: ?(.+)");
 
@@ -141,13 +139,6 @@ public class DonationScraper
             InterfaceID.Tradeconfirm.YOU_WILL_RECEIVE, TRADE_VALUE_PAT);
     }
 
-    public DonationInfo scrapeLootKeyScreen()
-    {
-        return scrapeDonation(
-            InterfaceID.WildyLootChest.CONTENTS,
-            InterfaceID.WildyLootChest.VALUE, LOOT_KEY_VALUE_PAT);
-    }
-
     public DonationInfo scrapePriceCheckScreen()
     {
         return scrapeDonation(
@@ -167,7 +158,6 @@ public class DonationScraper
         List<Supplier<DonationInfo>> scrapers = List.of(
             this::scrapeTradeMainScreen,
             this::scrapeTradeConfirmScreen,
-            this::scrapeLootKeyScreen,
             this::scrapePriceCheckScreen,
             this::scrapeLootingBag);
 

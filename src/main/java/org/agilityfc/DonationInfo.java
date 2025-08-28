@@ -20,7 +20,7 @@ public class DonationInfo
     /// A non-negative amount of GP.
     private int amount;
 
-    /// Screenshot of the trade, loot key, price check or looting bag screen.
+    /// Screenshot of the trade, price check or looting bag screen.
     @NonNull
     private BufferedImage screenshot;
 }
