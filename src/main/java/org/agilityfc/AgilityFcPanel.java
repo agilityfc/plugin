@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
@@ -13,6 +12,7 @@ import okhttp3.Call;
 import okhttp3.Response;
 import org.agilityfc.util.GridBagConstraintsBuilder;
 import org.agilityfc.util.NameAutocompleter;
+import org.agilityfc.util.IconTextField;
 
 import javax.inject.Inject;
 import javax.swing.BorderFactory;
@@ -34,6 +34,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -279,6 +281,17 @@ public class AgilityFcPanel extends PluginPanel
         }
     }
 
+    private static void confirmName(
+        IconTextField iconTextField, NameAutocompleter nameAutocompleter)
+    {
+        String name = nameAutocompleter.getAutocompleteName();
+
+        if (name != null)
+        {
+            iconTextField.setText(name);
+        }
+    }
+
     @Inject
     public AgilityFcPanel(
         NameAutocompleter nameAutocompleter, AgilityFcConfig config)
@@ -292,11 +305,14 @@ public class AgilityFcPanel extends PluginPanel
         fromField.setPreferredSize(STANDARD_DIM);
         fromField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         fromField.addKeyListener(nameAutocompleter);
-        fromField.addActionListener(e ->
+        fromField.addActionListener(e -> confirmName(fromField, nameAutocompleter));
+        fromField.addFocusListener(new FocusAdapter()
         {
-            // NOTE: Toggle the editable status to end the autocomplete.
-            fromField.setEditable(false);
-            fromField.setEditable(true);
+            @Override
+            public void focusLost(FocusEvent e)
+            {
+                confirmName(fromField, nameAutocompleter);
+            }
         });
         fromField.addMouseListener(new MouseAdapter()
         {

@@ -124,6 +124,11 @@ public class NameAutocompleter implements KeyListener
         }
     }
 
+    public String getAutocompleteName()
+    {
+        return autocompleteName;
+    }
+
     private void newAutocomplete(KeyEvent e)
     {
         final JTextComponent input = (JTextComponent)e.getSource();

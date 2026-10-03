@@ -325,6 +325,18 @@ public class IconTextField extends JPanel
     }
 
     @Override
+    public void addFocusListener(FocusListener l)
+    {
+        textField.addFocusListener(l);
+    }
+
+    @Override
+    public void removeFocusListener(FocusListener l)
+    {
+        textField.removeFocusListener(l);
+    }
+
+    @Override
     public boolean requestFocusInWindow()
     {
         super.requestFocusInWindow();
